@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planejador de Atividades</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
+    <h1 class="text-3xl font-bold text-center text-purple-600 mb-8 flex items-center justify-center gap-2">
+      <!-- Ícone de calendário -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10m-11 4h12M4 5h16a2 2 0 012 2v14a2 2 0 01-2 2H4a2 2 0 01-2-2V7a2 2 0 012-2z"/>
+      </svg>
+      Planejador de Atividades
+    </h1>
+
+    <form id="form" class="space-y-4 mb-6">
+      <input type="text" id="title" placeholder="Título da atividade"
+        class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400" required />
+      <textarea id="description" placeholder="Descrição" rows="2"
+        class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400" required></textarea>
+      <div class="flex items-center gap-2">
+        <input type="date" id="date"
+          class="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400" required />
+        <input type="time" id="time"
+          class="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400" required />
+      </div>
+      <button type="submit"
+        class="w-full bg-purple-500 text-white px-4 py-2 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Salvar Atividade
+      </button>
+    </form>
+
+    <div id="list" class="space-y-4"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("form");
+    const titleInput = document.getElementById("title");
+    const descriptionInput = document.getElementById("description");
+    const dateInput = document.getElementById("date");
+    const timeInput = document.getElementById("time");
+    const list = document.getElementById("list");
+
+    let activities = JSON.parse(localStorage.getItem("activities") || "[]");
+    let editIndex = null;
+
+    function saveToLocalStorage() {
+      localStorage.setItem("activities", JSON.stringify(activities));
+    }
+
+    function renderActivities() {
+      list.innerHTML = "";
+      activities.forEach((act, index) => {
+        const div = document.createElement("div");
+        div.className = "p-4 rounded-xl shadow bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100";
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="text-lg font-semibold text-purple-700">${act.title}</h3>
+              <p class="text-gray-600 mb-2">${act.description}</p>
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10m-11 4h12M4 5h16a2 2 0 012 2v14a2 2 0 01-2 2H4a2 2 0 01-2-2V7a2 2 0 012-2z"/>
+                </svg>
+                ${act.date} às ${act.time}
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="editActivity(${index})" class="p-2 text-blue-500 hover:bg-blue-100 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M4 13v4h4l10-10a1 1 0 00-1.414-1.414L4 13z"/>
+                </svg>
+              </button>
+              <button onclick="deleteActivity(${index})" class="p-2 text-red-500 hover:bg-red-100 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const newActivity = {
+        title: titleInput.value,
+        description: descriptionInput.value,
+        date: dateInput.value,
+        time: timeInput.value
+      };
+
+      if (editIndex !== null) {
+        activities[editIndex] = newActivity;
+        editIndex = null;
+      } else {
+        activities.push(newActivity);
+      }
+
+      saveToLocalStorage();
+      renderActivities();
+      form.reset();
+    });
+
+    function editActivity(index) {
+      const act = activities[index];
+      titleInput.value = act.title;
+      descriptionInput.value = act.description;
+      dateInput.value = act.date;
+      timeInput.value = act.time;
+      editIndex = index;
+    }
+
+    function deleteActivity(index) {
+      activities.splice(index, 1);
+      saveToLocalStorage();
+      renderActivities();
+    }
+
+    renderActivities();
+  </script>
+</body>
+</html>
